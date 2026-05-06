@@ -1,0 +1,2 @@
+"""Fire detection feature package."""
+

@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: conveyor_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: conveyor_db
+      POSTGRES_USER: conveyor_user
+      POSTGRES_PASSWORD: conveyor_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conveyor_user -d conveyor_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: conveyor_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://conveyor_user:conveyor_pass@postgres:5432/conveyor_db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+      - video_storage:/app/videos
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./apps/web-frontend-next
+      dockerfile: Dockerfile
+    container_name: conveyor_frontend
+    restart: unless-stopped
+    environment:
+      # Internal Docker network — never exposed to browser
+      BACKEND_URL: http://backend:8000
+      JWT_SECRET: ${JWT_SECRET}
+      UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-}
+      UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  video_storage:

@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Environment — NEVER commit secrets
+.env
+.env.local
+.env.*.local
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Node
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# SQLite local DB
+*.db
+*.sqlite
+
+# Model training artifacts (keep curated models under models/)
+runs/**/weights/last.pt
+runs/**/events.out.tfevents*
+
+# Generated assets (user uploads, processed videos, cache)
+assets/videos/uploaded/
+assets/processed_videos/
+assets/thumbnails/
+assets/analytics/
+
+# Large temporary datasets or exports
+dataimages/**/*.jpg
+dataimages/**/*.png
+dataimages/**/*.jpeg
+dataimages/**/*.bmp
