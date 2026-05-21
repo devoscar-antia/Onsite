@@ -309,7 +309,7 @@ def admin_set_password(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-    user.hashed_password = hash_password(payload.new_password)
+    user.password_hash = hash_password(payload.new_password)
     db.commit()
     _audit(db, current_user.id, "user.password_reset", user_id, {})
     return {"status": "ok", "id": user_id}
