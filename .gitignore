@@ -35,13 +35,8 @@ runs/**/weights/last.pt
 runs/**/events.out.tfevents*
 
 # Generated assets (user uploads, processed videos, cache)
-assets/videos/uploaded/
-assets/processed_videos/
-assets/thumbnails/
-assets/analytics/
+assets/
+dataimages/
 
-# Large temporary datasets or exports
-dataimages/**/*.jpg
-dataimages/**/*.png
-dataimages/**/*.jpeg
-dataimages/**/*.bmp
+# Session files
+sessions/
