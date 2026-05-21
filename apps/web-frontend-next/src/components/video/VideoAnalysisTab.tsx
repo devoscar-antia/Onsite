@@ -406,23 +406,36 @@ export function VideoAnalysisTab({
                     {formatDate(video.uploaded_at)}
                   </span>
                 </div>
-                <span className={`mt-1.5 inline-block rounded px-1.5 py-px text-[9px] font-medium ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-700"}`}>
-                  Conteo en cinta
-                </span>
+                {/* Actions row */}
+                <div className="mt-2 flex items-center gap-1.5">
+                  <button
+                    aria-label={video.has_processed ? "Ver análisis" : "Analizar video"}
+                    className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${
+                      video.has_processed
+                        ? isDark ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        : isDark ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                    }`}
+                    onClick={(e) => { e.stopPropagation(); void handleAnalyzeClick(video.id); }}
+                    type="button"
+                  >
+                    {video.has_processed
+                      ? <><Play className="h-2.5 w-2.5" /> Ver análisis</>
+                      : <><ScanSearch className="h-2.5 w-2.5" /> Analizar</>}
+                  </button>
+                  <button
+                    aria-label="Eliminar video"
+                    className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${isDark ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-red-50 text-red-600 hover:bg-red-100"}`}
+                    disabled={isDeleting}
+                    onClick={(e) => { e.stopPropagation(); onDelete(video.id); }}
+                    type="button"
+                  >
+                    {isDeleting
+                      ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                      : <Trash2 className="h-2.5 w-2.5" />}
+                    Eliminar
+                  </button>
+                </div>
               </div>
-
-              {/* Delete */}
-              <button
-                aria-label="Eliminar video"
-                className={`absolute right-2 top-2 rounded-lg p-1 opacity-0 transition-all group-hover:opacity-100 ${isDark ? "bg-black/50 text-slate-400 hover:bg-red-500/80 hover:text-white" : "bg-white/80 text-slate-500 hover:bg-red-500 hover:text-white"}`}
-                disabled={isDeleting}
-                onClick={(e) => { e.stopPropagation(); onDelete(video.id); }}
-                type="button"
-              >
-                {isDeleting
-                  ? <Loader2 className="h-3 w-3 animate-spin" />
-                  : <Trash2 className="h-3 w-3" />}
-              </button>
             </div>
           );
         })}
@@ -432,25 +445,15 @@ export function VideoAnalysisTab({
       <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
         {selectedVideo ? (
           <>
-            {/* Toolbar: model badge + action button */}
-            <div className={`flex shrink-0 items-center justify-between rounded-xl border px-4 py-2.5 ${isDark ? "border-slate-800 bg-white/2" : "border-slate-200 bg-white"}`}>
+            {/* Toolbar: model badge */}
+            <div className={`flex shrink-0 items-center rounded-xl border px-4 py-2.5 ${isDark ? "border-slate-800 bg-white/2" : "border-slate-200 bg-white"}`}>
               <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${isDark ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
                 <Zap className="h-3 w-3" />
                 YOLOv8 · Conteo de productos en cinta
               </span>
-              <button
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-                  selectedVideo.has_processed
-                    ? "bg-emerald-600 text-white hover:bg-emerald-500"
-                    : "bg-blue-600 text-white hover:bg-blue-500"
-                }`}
-                onClick={() => void handleAnalyzeClick(selectedVideo.id)}
-                type="button"
-              >
-                {selectedVideo.has_processed
-                  ? <><Play className="h-4 w-4" /> Ver análisis</>
-                  : <><ScanSearch className="h-4 w-4" /> Procesar video</>}
-              </button>
+              <span className={`ml-auto text-[10px] ${isDark ? "text-muted" : "text-slate-400"}`}>
+                Usa los botones de la lista para analizar
+              </span>
             </div>
 
             {/* Original video player */}
