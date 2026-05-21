@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: conveyor_db
       POSTGRES_USER: conveyor_user
-      POSTGRES_PASSWORD: conveyor_pass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-conveyor_pass}
     ports:
       - "5432:5432"
     volumes:
@@ -27,7 +27,12 @@ services:
     container_name: conveyor_backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://conveyor_user:conveyor_pass@postgres:5432/conveyor_db
+      APP_ENV: production
+      DATABASE_URL: postgresql://conveyor_user:${POSTGRES_PASSWORD:-conveyor_pass}@postgres:5432/conveyor_db
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
     ports:
       - "8000:8000"
     volumes:

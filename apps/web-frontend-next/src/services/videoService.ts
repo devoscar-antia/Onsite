@@ -4,7 +4,7 @@ function readCsrfToken(): string {
   const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
   return match ? decodeURIComponent(match[1]!) : "";
 }
-import type { Detection, Job, ProcessResult, UploadResult, VideoItem, VideoMetadata } from "@/types/video";
+import type { Detection, Job, ProcessResult, ProductCount, ProductCountRecord, UploadResult, VideoItem, VideoMetadata } from "@/types/video";
 
 const vId = (id: string) => encodeURIComponent(id);
 
@@ -27,6 +27,12 @@ export const videoService = {
 
   getDetections: (videoId: string) =>
     apiGet<Detection[]>(`/videos/${vId(videoId)}/detections`),
+
+  getProductCount: (videoId: string) =>
+    apiGet<ProductCount>(`/videos/${vId(videoId)}/product-count`),
+
+  listProductCounts: (limit = 100) =>
+    apiGet<ProductCountRecord[]>(`/videos/product-counts?limit=${limit}`),
 
   // These return URLs — browser fetches with cookies automatically
   getVideoStreamUrl: (id: string) =>

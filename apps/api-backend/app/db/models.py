@@ -52,6 +52,7 @@ class Video(Base):
 
     uploaded_by_user = relationship("User", back_populates="videos")
     jobs = relationship("ProcessingJob", foreign_keys="ProcessingJob.video_id", back_populates="video", cascade="all, delete-orphan")
+    product_counts = relationship("ProductCount", back_populates="video", cascade="all, delete-orphan")
 
 
 class ProcessingJob(Base):
@@ -75,3 +76,35 @@ class ProcessingJob(Base):
 
     video = relationship("Video", foreign_keys=[video_id], back_populates="jobs")
     created_by_user = relationship("User", back_populates="jobs")
+    product_count = relationship("ProductCount", back_populates="job", uselist=False, cascade="all, delete-orphan")
+
+
+class AuditLog(Base):
+    """Immutable record of sensitive admin actions."""
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    actor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    action = Column(String(128), nullable=False)          # e.g. "user.role_changed"
+    target_user_id = Column(Integer, nullable=True)       # user affected (not FK — survives user deletion)
+    details = Column(JSON, nullable=True)                 # {"old_role": "viewer", "new_role": "admin"}
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    actor = relationship("User", foreign_keys=[actor_id])
+
+
+class ProductCount(Base):
+    """Stores the verified product count for each completed processing job."""
+    __tablename__ = "product_counts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    job_id = Column(Integer, ForeignKey("processing_jobs.id", ondelete="CASCADE"), nullable=False, unique=True)
+    video_id = Column(Integer, ForeignKey("videos.id", ondelete="CASCADE"), nullable=False)
+    # Accurate count from lane-dedupe processing script
+    total_count = Column(Integer, nullable=False, default=0)
+    # Per-class unique track counts: {"bag": 12, "box": 6}
+    class_breakdown = Column(JSON, nullable=True)
+    counted_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    job = relationship("ProcessingJob", back_populates="product_count")
+    video = relationship("Video", back_populates="product_counts")

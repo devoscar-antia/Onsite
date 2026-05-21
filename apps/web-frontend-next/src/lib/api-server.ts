@@ -2,7 +2,16 @@ import "server-only";
 
 import { getAccessToken } from "./auth-cookies";
 
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000";
+const BACKEND_URL = (() => {
+  const url = process.env.BACKEND_URL;
+  if (!url) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("BACKEND_URL env var is required in production");
+    }
+    return "http://localhost:8000";
+  }
+  return url;
+})();
 
 export async function backendFetch(
   path: string,
@@ -19,7 +28,9 @@ export async function backendFetch(
     headers.set("Content-Type", "application/json");
   }
 
-  const signal = init?.signal ?? AbortSignal.timeout(15_000);
+  // Streaming endpoints (video) must not be killed by a short timeout — callers
+  // that need a deadline should pass their own signal via init.signal.
+  const signal = init?.signal ?? (path.includes("/stream") ? undefined : AbortSignal.timeout(30_000));
   return fetch(`${BACKEND_URL}${path}`, { ...init, headers, signal });
 }
 

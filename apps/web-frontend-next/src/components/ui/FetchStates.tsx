@@ -22,7 +22,7 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <div className="grid min-h-[200px] place-items-center rounded-2xl border border-danger/20 bg-danger/5 p-6">
+    <div className="grid min-h-50 place-items-center rounded-2xl border border-danger/20 bg-danger/5 p-6">
       <div className="text-center">
         <p className="text-sm font-medium text-danger">{message}</p>
         {onRetry && (
@@ -52,7 +52,7 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={`grid min-h-[280px] place-items-center rounded-2xl border p-6 ${isDark ? "border-[rgba(255,255,255,0.06)] bg-surface" : "border-slate-200 bg-white"}`}
+      className={`grid min-h-70 place-items-center rounded-2xl border p-6 ${isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white"}`}
     >
       <div className="text-center">
         <Icon

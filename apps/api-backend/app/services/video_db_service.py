@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
-from app.db.models import ProcessingJob, Video
+from app.db.models import ProcessingJob, ProductCount, Video
 
 
 # ---------------------------------------------------------------------------
@@ -126,3 +126,56 @@ def list_jobs(db: Session, video_id: Optional[int] = None) -> List[ProcessingJob
     if video_id is not None:
         q = q.filter(ProcessingJob.video_id == video_id)
     return q.order_by(ProcessingJob.created_at.desc()).all()
+
+
+# ---------------------------------------------------------------------------
+# ProductCount
+# ---------------------------------------------------------------------------
+
+def save_product_count(
+    db: Session,
+    job_id: int,
+    video_id: int,
+    total_count: int,
+    class_breakdown: Optional[dict] = None,
+) -> ProductCount:
+    existing = db.query(ProductCount).filter(ProductCount.job_id == job_id).first()
+    if existing:
+        existing.total_count = total_count
+        existing.class_breakdown = class_breakdown
+        db.commit()
+        db.refresh(existing)
+        return existing
+    record = ProductCount(
+        job_id=job_id,
+        video_id=video_id,
+        total_count=total_count,
+        class_breakdown=class_breakdown,
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def get_product_count_by_video(db: Session, video_id: int) -> Optional[ProductCount]:
+    """Return the most recent product count for a video (latest done job)."""
+    return (
+        db.query(ProductCount)
+        .filter(ProductCount.video_id == video_id)
+        .join(ProcessingJob, ProductCount.job_id == ProcessingJob.id)
+        .filter(ProcessingJob.status == "done")
+        .order_by(ProcessingJob.ended_at.desc())
+        .first()
+    )
+
+
+def list_product_counts(db: Session, limit: int = 100) -> List[ProductCount]:
+    return (
+        db.query(ProductCount)
+        .join(ProcessingJob, ProductCount.job_id == ProcessingJob.id)
+        .filter(ProcessingJob.status == "done")
+        .order_by(ProductCount.counted_at.desc())
+        .limit(limit)
+        .all()
+    )

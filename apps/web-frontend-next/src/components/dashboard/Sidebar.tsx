@@ -1,7 +1,7 @@
 "use client";
 
 import type { ActiveTab } from "@/types/video";
-import { BarChart2, FileVideo, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
+import { BarChart2, FileVideo, PanelLeftClose, PanelLeftOpen, Radio, Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export function Sidebar({
@@ -21,6 +21,7 @@ export function Sidebar({
   const NAV = [
     { key: "videos" as ActiveTab, label: t("videos"), icon: FileVideo },
     { key: "dashboard" as ActiveTab, label: t("dashboard"), icon: BarChart2 },
+    { key: "live" as ActiveTab, label: "En vivo", icon: Radio },
     { key: "settings" as ActiveTab, label: t("settings"), icon: Settings },
   ];
   return (

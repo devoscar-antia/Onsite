@@ -114,18 +114,11 @@
 }
 
 * {
-  scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  scrollbar-width: none;
 }
 
 *::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 999px;
+  display: none;
 }
 
 body {
@@ -187,4 +180,11 @@ body {
 
 .region-select input {
   caret-color: #3b82f6 !important;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

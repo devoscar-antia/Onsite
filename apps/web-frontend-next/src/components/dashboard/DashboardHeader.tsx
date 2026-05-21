@@ -44,7 +44,7 @@ export function DashboardHeader({
       <div>
         <p className="text-xs text-muted">
           Workspace /{" "}
-          {{ videos: "Videos", dashboard: "Dashboard", settings: "Configuración" }[activeTab]}
+          {{ videos: "Videos", dashboard: "Dashboard", live: "En vivo", settings: "Configuración" }[activeTab]}
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           Onsite – Enterprise Video Analytics
@@ -54,7 +54,7 @@ export function DashboardHeader({
       <div className="relative flex items-center gap-2">
         <button
           aria-label="Cambiar tema"
-          className={`group relative inline-flex h-9 w-[74px] items-center rounded-full border px-1 transition-all ${isDark ? "border-[rgba(255,255,255,0.08)] bg-surface" : "border-slate-200 bg-white"}`}
+          className={`group relative inline-flex h-9 w-[74px] items-center rounded-full border px-1 transition-all ${isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white"}`}
           onClick={onToggleTheme}
           type="button"
         >
@@ -67,7 +67,7 @@ export function DashboardHeader({
         </button>
 
         <button
-          className={`relative inline-flex h-9 w-9 items-center justify-center rounded-lg border ${isDark ? "border-[rgba(255,255,255,0.06)] bg-surface text-muted hover:bg-white/5 hover:text-text" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}
+          className={`relative inline-flex h-9 w-9 items-center justify-center rounded-lg border ${isDark ? "border-border-soft bg-surface text-muted hover:bg-white/5 hover:text-text" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}
           onClick={() => {
             setNotifOpen((o) => !o);
             if (!notifOpen) onMarkAllRead();
@@ -84,7 +84,7 @@ export function DashboardHeader({
 
         {notifOpen && (
           <div
-            className={`absolute right-16 top-14 z-20 w-80 rounded-xl border p-2 shadow-lg ${isDark ? "border-[rgba(255,255,255,0.08)] bg-[#0f172a]" : "border-slate-200 bg-white"}`}
+            className={`absolute right-16 top-14 z-20 w-80 rounded-xl border p-2 shadow-lg ${isDark ? "border-border-soft bg-[#0f172a]" : "border-slate-200 bg-white"}`}
           >
             <p className={`px-2 pb-2 pt-1 text-xs font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>
               Notificaciones
