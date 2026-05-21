@@ -154,7 +154,7 @@ export function VideoPlayer({
 
   if (!videoUrl) {
     return (
-      <div className="grid min-h-[420px] place-items-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-surface p-6">
+      <div className={`grid min-h-105 place-items-center rounded-2xl border p-6 ${isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white"}`}>
         <div className="text-center">
           <Film className={`mx-auto h-14 w-14 ${isDark ? "text-muted" : "text-slate-500"}`} />
           <h3 className="mt-3 text-lg font-semibold">
@@ -170,11 +170,11 @@ export function VideoPlayer({
 
   return (
     <div
-      className={`w-full overflow-hidden space-y-3 rounded-2xl border p-4 shadow-soft ${isDark ? "border-[rgba(255,255,255,0.06)] bg-surface" : "border-slate-200 bg-white"}`}
+      className={`flex h-full w-full flex-col gap-3 overflow-hidden rounded-2xl border p-4 shadow-soft ${isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white"}`}
     >
       <div
         ref={frameRef}
-        className="relative overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] bg-black"
+        className={`relative min-h-0 flex-1 overflow-hidden rounded-xl border bg-black ${isDark ? "border-border-soft" : "border-slate-200"}`}
       >
         {overlayBadge && (
           <span className="absolute left-3 top-3 z-10 rounded-full bg-black/50 px-3 py-1 text-xs text-text backdrop-blur">
@@ -219,7 +219,7 @@ export function VideoPlayer({
           </div>
         )}
         <video
-          className="aspect-video w-full bg-black object-contain"
+          className="h-full w-full bg-black object-contain"
           playsInline
           preload="metadata"
           ref={videoRef}
@@ -243,7 +243,7 @@ export function VideoPlayer({
           {toTime(current)} / {toTime(duration)}
         </span>
         <input
-          className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-[#334155] accent-primary"
+          className={`h-1.5 flex-1 cursor-pointer appearance-none rounded-full accent-primary ${isDark ? "bg-slate-700" : "bg-slate-300"}`}
           max={duration || 0}
           min={0}
           onChange={(e) => {
@@ -257,7 +257,7 @@ export function VideoPlayer({
         />
         <Volume2 className={`h-4 w-4 ${isDark ? "text-muted" : "text-slate-600"}`} />
         <input
-          className="h-1.5 w-20 cursor-pointer appearance-none rounded-full bg-[#334155] accent-primary"
+          className={`h-1.5 w-20 cursor-pointer appearance-none rounded-full accent-primary ${isDark ? "bg-slate-700" : "bg-slate-300"}`}
           max={1}
           min={0}
           onChange={(e) => {

@@ -14,7 +14,8 @@ import type { VideoItem } from "@/types/video";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useState } from "react";
 import SettingsPage from "@/components/settings/SettingsPage";
-import { BarChart2, FileVideo, Settings } from "lucide-react";
+import LiveMonitorTab from "@/components/live/LiveMonitorTab";
+import { BarChart2, FileVideo, Radio, Settings } from "lucide-react";
 import type { ActiveTab } from "@/types/video";
 
 type NotifType = "upload" | "processed" | "error";
@@ -217,6 +218,8 @@ export function DashboardShell({
               />
             )}
 
+            {activeTab === "live" && <LiveMonitorTab isDark={isDark} />}
+
             {activeTab === "settings" && <SettingsPage isDark={isDark} onSetTheme={setIsDark} />}
           </div>
         </div>
@@ -251,6 +254,7 @@ export function DashboardShell({
         {([
           { key: "videos" as ActiveTab, label: "Videos", icon: FileVideo },
           { key: "dashboard" as ActiveTab, label: "Dashboard", icon: BarChart2 },
+          { key: "live" as ActiveTab, label: "En vivo", icon: Radio },
           { key: "settings" as ActiveTab, label: "Config.", icon: Settings },
         ] as { key: ActiveTab; label: string; icon: React.ElementType }[]).map(({ key, label, icon: Icon }) => (
           <button

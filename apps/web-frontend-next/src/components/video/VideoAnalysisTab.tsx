@@ -1,6 +1,7 @@
 "use client";
 
 import { EmptyState } from "@/components/ui/FetchStates";
+import { UploadDropzone } from "@/components/video/UploadDropzone";
 import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { queryKeys } from "@/lib/query-keys";
 import { processedService } from "@/services/processedService";
@@ -17,12 +18,13 @@ import {
   FileVideo,
   HardDrive,
   Loader2,
+  Pencil,
   Play,
   ScanSearch,
   Trash2,
   Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function formatBytes(bytes: number): string {
   if (!bytes || bytes <= 0) return "N/D";
@@ -64,7 +66,7 @@ export function VideoAnalysisTab({
   onVideosChange: (videos: VideoItem[]) => void;
   pushNotification: (type: "upload" | "processed" | "error", filename: string) => void;
 }) {
-  const { nameMap } = useNameMapStore();
+  const { nameMap, setName, removeName } = useNameMapStore();
   const queryClient = useQueryClient();
   const [subView, setSubView] = useState<SubView>("library");
   const [syncTime, setSyncTime] = useState(0);
@@ -72,6 +74,9 @@ export function VideoAnalysisTab({
   const [processStage, setProcessStage] = useState("");
   const [processProgress, setProcessProgress] = useState(0);
   const [processedInfo, setProcessedInfo] = useState<ProcessedVideoInfo | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const selectedVideo = useMemo(
     () => videos.find((v) => v.id === selectedVideoId) ?? null,
@@ -116,8 +121,19 @@ export function VideoAnalysisTab({
   const { data: detections } = useQuery<Detection[]>({
     queryKey: queryKeys.detections(selectedVideoId ?? ""),
     queryFn: () => processedService.getDetections(selectedVideoId!),
-    enabled: !!selectedVideoId && !!processedInfo,
+    enabled: !!selectedVideoId && !!(selectedVideo?.has_processed),
+    staleTime: Infinity,
   });
+
+  const handleUploadSuccess = useCallback(
+    (video: VideoItem, originalName: string) => {
+      onVideosChange([video, ...videos]);
+      onSelectVideo(video.id);
+      pushNotification("upload", originalName);
+      void queryClient.invalidateQueries({ queryKey: ["videos"] });
+    },
+    [videos, onVideosChange, onSelectVideo, pushNotification, queryClient],
+  );
 
   const handleAnalyzeClick = useCallback(async (videoId: string) => {
     const target = videos.find((v) => v.id === videoId);
@@ -156,6 +172,23 @@ export function VideoAnalysisTab({
     }
   }, [videos, onSelectVideo, onVideosChange, pushNotification, queryClient]);
 
+  const startRename = useCallback((video: VideoItem) => {
+    setRenamingId(video.id);
+    setRenameValue(nameMap[video.id] ?? video.filename);
+    window.setTimeout(() => renameInputRef.current?.select(), 0);
+  }, [nameMap]);
+
+  const commitRename = useCallback((videoId: string) => {
+    const trimmed = renameValue.trim();
+    if (trimmed) setName(videoId, trimmed);
+    else removeName(videoId);
+    setRenamingId(null);
+  }, [renameValue, setName, removeName]);
+
+  const cancelRename = useCallback(() => {
+    setRenamingId(null);
+  }, []);
+
   const processedUrl = selectedVideo && processedInfo
     ? `${processedService.getProcessedStreamUrl(selectedVideo.id)}?v=${encodeURIComponent(processedInfo.processed_filename)}`
     : null;
@@ -170,13 +203,16 @@ export function VideoAnalysisTab({
   // ── Empty state ──────────────────────────────────────────────────────────
   if (videos.length === 0) {
     return (
-      <section className={`grid min-h-80 place-items-center rounded-2xl border-2 border-dashed p-6 ${isDark ? "border-[rgba(255,255,255,0.12)] bg-surface" : "border-slate-300 bg-white"}`}>
+      <section className={`flex flex-col items-center gap-6 rounded-2xl border-2 border-dashed p-8 ${isDark ? "border-slate-800 bg-surface" : "border-slate-200 bg-white"}`}>
         <div className="text-center">
           <FileVideo className={`mx-auto h-12 w-12 ${isDark ? "text-muted" : "text-slate-400"}`} />
-          <h3 className="mt-3 text-lg font-semibold">No hay videos disponibles</h3>
-          <p className={`mt-1 text-sm ${isDark ? "text-muted" : "text-slate-600"}`}>
-            Contacta al administrador para cargar videos al sistema.
+          <h3 className={`mt-3 text-base font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Sin videos todavía</h3>
+          <p className={`mt-1 text-sm ${isDark ? "text-muted" : "text-slate-500"}`}>
+            Sube tu primer video para comenzar el análisis
           </p>
+        </div>
+        <div className="w-full max-w-sm">
+          <UploadDropzone isDark={isDark} onSuccess={handleUploadSuccess} />
         </div>
       </section>
     );
@@ -209,7 +245,7 @@ export function VideoAnalysisTab({
 
         {/* Processing progress */}
         {(processing || processProgress > 0) && (
-          <div className={`shrink-0 rounded-xl border p-3 ${isDark ? "border-[rgba(255,255,255,0.08)] bg-surface-2" : "border-slate-200 bg-white"}`}>
+          <div className={`shrink-0 rounded-xl border p-3 ${isDark ? "border-border-soft bg-surface-2" : "border-slate-200 bg-white"}`}>
             <div className="mb-2 flex items-center justify-between text-xs">
               <span className={`inline-flex items-center gap-2 ${isDark ? "text-muted" : "text-slate-600"}`}>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -254,11 +290,11 @@ export function VideoAnalysisTab({
               />
             ) : null}
           </div>
-          <div className="hidden w-64 shrink-0 overflow-x-hidden overflow-y-auto xl:block">
+          <div className="hidden w-64 shrink-0 overflow-x-hidden overflow-y-auto lg:block">
             <RealTimeStatsPanel
               currentFrame={currentFrame}
               detections={detections ?? []}
-              hasProcessed={!!processedInfo}
+              hasProcessed={!!(selectedVideo?.has_processed)}
               isDark={isDark}
               syncTime={syncTime}
               videoId={selectedVideoId}
@@ -283,6 +319,9 @@ export function VideoAnalysisTab({
             {videos.length} video{videos.length !== 1 ? "s" : ""} · YOLOv8
           </p>
         </div>
+
+        {/* Upload */}
+        <UploadDropzone isDark={isDark} onSuccess={handleUploadSuccess} />
 
         {/* List items */}
         {videos.map((video) => {
@@ -324,9 +363,35 @@ export function VideoAnalysisTab({
 
               {/* Info */}
               <div className="min-w-0 flex-1">
-                <p className={`truncate text-xs font-medium ${isDark ? "text-text" : "text-slate-900"}`} title={displayName}>
-                  {displayName}
-                </p>
+                {renamingId === video.id ? (
+                  <input
+                    ref={renameInputRef}
+                    className={`w-full rounded-md border px-1.5 py-0.5 text-xs outline-none focus:border-blue-500 ${isDark ? "border-slate-700 bg-slate-800 text-white" : "border-slate-300 bg-white text-slate-900"}`}
+                    onBlur={() => commitRename(video.id)}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      if (e.key === "Enter") { e.preventDefault(); commitRename(video.id); }
+                      if (e.key === "Escape") cancelRename();
+                    }}
+                    value={renameValue}
+                  />
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <p className={`truncate text-xs font-medium ${isDark ? "text-text" : "text-slate-900"}`} title={displayName}>
+                      {displayName}
+                    </p>
+                    <button
+                      aria-label="Renombrar video"
+                      className={`shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 ${isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}
+                      onClick={(e) => { e.stopPropagation(); startRename(video); }}
+                      type="button"
+                    >
+                      <Pencil className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                )}
                 <div className={`mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] ${isDark ? "text-muted" : "text-slate-500"}`}>
                   <span className="inline-flex items-center gap-0.5">
                     <Clock className="h-2.5 w-2.5" />
@@ -341,23 +406,36 @@ export function VideoAnalysisTab({
                     {formatDate(video.uploaded_at)}
                   </span>
                 </div>
-                <span className={`mt-1.5 inline-block rounded px-1.5 py-px text-[9px] font-medium ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-700"}`}>
-                  Conteo en cinta
-                </span>
+                {/* Actions row */}
+                <div className="mt-2 flex items-center gap-1.5">
+                  <button
+                    aria-label={video.has_processed ? "Ver análisis" : "Analizar video"}
+                    className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${
+                      video.has_processed
+                        ? isDark ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        : isDark ? "bg-blue-500/15 text-blue-400 hover:bg-blue-500/25" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                    }`}
+                    onClick={(e) => { e.stopPropagation(); void handleAnalyzeClick(video.id); }}
+                    type="button"
+                  >
+                    {video.has_processed
+                      ? <><Play className="h-2.5 w-2.5" /> Ver análisis</>
+                      : <><ScanSearch className="h-2.5 w-2.5" /> Analizar</>}
+                  </button>
+                  <button
+                    aria-label="Eliminar video"
+                    className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium transition-colors ${isDark ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-red-50 text-red-600 hover:bg-red-100"}`}
+                    disabled={isDeleting}
+                    onClick={(e) => { e.stopPropagation(); onDelete(video.id); }}
+                    type="button"
+                  >
+                    {isDeleting
+                      ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                      : <Trash2 className="h-2.5 w-2.5" />}
+                    Eliminar
+                  </button>
+                </div>
               </div>
-
-              {/* Delete */}
-              <button
-                aria-label="Eliminar video"
-                className={`absolute right-2 top-2 rounded-lg p-1 opacity-0 transition-all group-hover:opacity-100 ${isDark ? "bg-black/50 text-slate-400 hover:bg-red-500/80 hover:text-white" : "bg-white/80 text-slate-500 hover:bg-red-500 hover:text-white"}`}
-                disabled={isDeleting}
-                onClick={(e) => { e.stopPropagation(); onDelete(video.id); }}
-                type="button"
-              >
-                {isDeleting
-                  ? <Loader2 className="h-3 w-3 animate-spin" />
-                  : <Trash2 className="h-3 w-3" />}
-              </button>
             </div>
           );
         })}
@@ -367,25 +445,15 @@ export function VideoAnalysisTab({
       <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
         {selectedVideo ? (
           <>
-            {/* Toolbar: model badge + action button */}
-            <div className={`flex shrink-0 items-center justify-between rounded-xl border px-4 py-2.5 ${isDark ? "border-slate-800 bg-white/2" : "border-slate-200 bg-white"}`}>
+            {/* Toolbar: model badge */}
+            <div className={`flex shrink-0 items-center rounded-xl border px-4 py-2.5 ${isDark ? "border-slate-800 bg-white/2" : "border-slate-200 bg-white"}`}>
               <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${isDark ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
                 <Zap className="h-3 w-3" />
                 YOLOv8 · Conteo de productos en cinta
               </span>
-              <button
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-                  selectedVideo.has_processed
-                    ? "bg-emerald-600 text-white hover:bg-emerald-500"
-                    : "bg-blue-600 text-white hover:bg-blue-500"
-                }`}
-                onClick={() => void handleAnalyzeClick(selectedVideo.id)}
-                type="button"
-              >
-                {selectedVideo.has_processed
-                  ? <><Play className="h-4 w-4" /> Ver análisis</>
-                  : <><ScanSearch className="h-4 w-4" /> Procesar video</>}
-              </button>
+              <span className={`ml-auto text-[10px] ${isDark ? "text-muted" : "text-slate-400"}`}>
+                Usa los botones de la lista para analizar
+              </span>
             </div>
 
             {/* Original video player */}

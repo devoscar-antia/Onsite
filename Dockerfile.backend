@@ -1,0 +1,51 @@
+FROM python:3.11-slim AS base
+
+WORKDIR /app
+
+# System deps: libgl1/libglib2.0 for OpenCV, libpq for psycopg2, ffmpeg for video metadata
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libgl1 \
+        libglib2.0-0 \
+        libpq-dev \
+        ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- deps stage: install Python packages ---
+FROM base AS deps
+
+COPY apps/api-backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install ML packages separately (large; cached independently)
+RUN pip install --no-cache-dir \
+        opencv-python-headless==4.10.0.84 \
+        ultralytics==8.3.61
+
+# --- runner stage ---
+FROM base AS runner
+
+# Copy installed packages from deps stage
+COPY --from=deps /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=deps /usr/local/bin /usr/local/bin
+
+# Non-root user
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --ingroup appgroup appuser
+
+WORKDIR /app
+
+# Copy application code
+COPY apps/api-backend/ ./
+
+# Models and assets are mounted as volumes at runtime — do not bake into image
+# docker-compose mounts: ./models → /app/models:ro, video_storage → /app/videos
+
+ENV APP_ENV=production
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+USER appuser
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

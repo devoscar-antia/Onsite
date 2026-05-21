@@ -190,7 +190,7 @@ function SettingsSidebar({
   ];
   return (
     <aside
-      className={`sticky top-0 w-full shrink-0 self-start rounded-2xl border p-2 lg:w-[220px] ${isDark ? "border-slate-800 bg-white/[0.03]" : "border-slate-200 bg-white"}`}
+      className={`sticky top-0 w-full shrink-0 self-start rounded-2xl border p-2 lg:w-[220px] ${isDark ? "border-slate-800 bg-white/3" : "border-slate-200 bg-white"}`}
     >
       {navItems
         .filter((item) => !item.adminOnly || userRole === "admin")
@@ -205,7 +205,11 @@ function SettingsSidebar({
               ) : null}
               <button
                 className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-150 ${
-                  active ? "bg-blue-500/15 text-blue-400" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                  active
+                    ? "bg-blue-500/15 text-blue-400"
+                    : isDark
+                      ? "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 }`}
                 onClick={() => onChange(item.id)}
                 type="button"
@@ -374,7 +378,7 @@ function ProfileSection({
         <div className="flex items-end gap-4 px-6 pb-5">
           <div className="relative -mt-10">
             <div
-              className="flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-bold text-white shadow-lg ring-4 ring-[var(--ring)]"
+              className="flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-bold text-white shadow-lg ring-4 ring-(--ring)"
               style={{
                 background: `linear-gradient(135deg, ${color.from}, ${color.to})`,
                 ["--ring" as string]: isDark ? "#0d1117" : "#ffffff",
@@ -384,7 +388,7 @@ function ProfileSection({
             </div>
             {/* Color picker toggle */}
             <button
-              className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-slate-800 border-slate-700 text-slate-300 transition-colors hover:bg-slate-700"
+              className={`absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${isDark ? "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-100"}`}
               onClick={() => setShowColorPicker((v) => !v)}
               title="Cambiar color"
               type="button"
@@ -412,7 +416,7 @@ function ProfileSection({
             <p className={`mr-2 text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>Color del avatar</p>
             {AVATAR_COLORS.map((c, i) => (
               <button
-                className={`h-6 w-6 rounded-full transition-transform hover:scale-110 ${avatarColorIdx === i ? "ring-2 ring-white ring-offset-1 ring-offset-slate-900" : ""}`}
+                className={`h-6 w-6 rounded-full transition-transform hover:scale-110 ${avatarColorIdx === i ? `ring-2 ring-white ring-offset-1 ${isDark ? "ring-offset-slate-900" : "ring-offset-white"}` : ""}`}
                 key={c.label}
                 onClick={() => { setAvatarColorIdx(i); setShowColorPicker(false); }}
                 style={{ background: `linear-gradient(135deg, ${c.from}, ${c.to})` }}
@@ -435,7 +439,7 @@ function ProfileSection({
       </div>
 
       {/* Profile completeness */}
-      <div className={`mb-4 rounded-xl border px-4 py-3 ${isDark ? "border-slate-800 bg-white/[0.02]" : "border-slate-200 bg-white"}`}>
+      <div className={`mb-4 rounded-xl border px-4 py-3 ${isDark ? "border-slate-800 bg-white/2" : "border-slate-200 bg-white"}`}>
         <div className="mb-2 flex items-center justify-between text-xs">
           <span className={isDark ? "text-slate-400" : "text-slate-600"}>Perfil completado</span>
           <span className={`font-mono font-medium ${pct === 100 ? "text-emerald-400" : isDark ? "text-slate-300" : "text-slate-700"}`}>{pct}%</span>
@@ -791,7 +795,7 @@ export default function SettingsPage({
                 >
                   <div
                     className={`h-16 w-full overflow-hidden rounded-lg ${
-                      themeKey === "dark" ? "bg-slate-900" : themeKey === "light" ? "bg-slate-100" : "bg-gradient-to-r from-slate-900 to-slate-100"
+                      themeKey === "dark" ? "bg-slate-900" : themeKey === "light" ? "bg-slate-100" : "bg-linear-to-r from-slate-900 to-slate-100"
                     }`}
                   />
                   <span className={`text-xs font-medium ${appearance.theme === themeKey ? "text-blue-400" : isDark ? "text-slate-400" : "text-slate-600"}`}>
@@ -862,7 +866,7 @@ export default function SettingsPage({
                 ).map(({ label, value, Icon, bg, text }) => (
                   <div
                     key={label}
-                    className={`flex items-center gap-3 rounded-2xl border p-4 ${isDark ? "border-[rgba(255,255,255,0.06)] bg-surface" : "border-slate-200 bg-white"}`}
+                    className={`flex items-center gap-3 rounded-2xl border p-4 ${isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white"}`}
                   >
                     <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${bg}`}>
                       <Icon className={`h-4 w-4 ${text}`} />
@@ -876,7 +880,7 @@ export default function SettingsPage({
               </div>
 
               {/* Search */}
-              <div className={`flex items-center gap-3 rounded-2xl border p-3 ${isDark ? "border-[rgba(255,255,255,0.06)] bg-surface" : "border-slate-200 bg-white"}`}>
+              <div className={`flex items-center gap-3 rounded-2xl border p-3 ${isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white"}`}>
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
                   <input
@@ -897,7 +901,7 @@ export default function SettingsPage({
                       roleFilter === value
                         ? "border-blue-500 bg-blue-500/15 text-blue-400"
                         : isDark
-                          ? "border-slate-700 bg-white/[0.03] text-slate-400 hover:border-slate-600 hover:text-slate-300"
+                          ? "border-slate-700 bg-white/3 text-slate-400 hover:border-slate-600 hover:text-slate-300"
                           : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
                     }`}
                     key={value}
@@ -915,7 +919,7 @@ export default function SettingsPage({
               </div>
 
               {/* Table */}
-              <div className={`overflow-hidden rounded-2xl border ${isDark ? "border-[rgba(255,255,255,0.06)] bg-surface" : "border-slate-200 bg-white"}`}>
+              <div className={`overflow-hidden rounded-2xl border ${isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white"}`}>
                 {/* Table header */}
                 <div className={`grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-b px-4 py-2.5 sm:grid-cols-[1fr_auto_auto_auto] ${isDark ? "border-slate-800" : "border-slate-100"}`}>
                   <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}>Usuario</span>
@@ -969,7 +973,7 @@ export default function SettingsPage({
                         <div
                           key={u.id}
                           className={`grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-b px-4 py-3 transition-colors last:border-0 sm:grid-cols-[1fr_auto_auto_auto] ${
-                            isDark ? "border-slate-800/60 hover:bg-white/[0.025]" : "border-slate-100 hover:bg-slate-50/70"
+                            isDark ? "border-slate-800/60 hover:bg-white/2.5" : "border-slate-100 hover:bg-slate-50/70"
                           }`}
                         >
                           {/* Avatar + name */}
@@ -978,7 +982,7 @@ export default function SettingsPage({
                               <span className={`text-xs font-bold ${color.text}`}>
                                 {u.initials ?? u.email[0]?.toUpperCase() ?? "?"}
                               </span>
-                              <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ${isDark ? "ring-[var(--surface)]" : "ring-white"} ${u.status === "active" ? "bg-emerald-400" : "bg-slate-500"}`} />
+                              <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ${isDark ? "ring-(--surface)" : "ring-white"} ${u.status === "active" ? "bg-emerald-400" : "bg-slate-500"}`} />
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
@@ -1057,7 +1061,7 @@ export default function SettingsPage({
                                 </button>
                               </>
                             ) : (
-                              <div className="w-[82px]" />
+                              <div className="w-20.5" />
                             )}
                           </div>
                         </div>

@@ -284,6 +284,11 @@ def run_processing(source_path: Path, video_filename: str) -> dict:
         "--output-dir", str(PROCESSED_VIDEOS_DIR),
         "--direction", "any",
         "--line-ratio", "0.5",
+        "--lane-dedupe",                 # suppress re-ID double-counts in same lane
+        "--lane-width-px", "120",        # lane width for deduplication
+        "--lane-window-frames", "60",    # window to suppress within-lane recounts
+        "--count-cooldown-frames", "40", # suppress near-simultaneous x-position counts
+        "--min-track-frames", "3",       # require 3 frames before counting (reduces ghosts)
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:

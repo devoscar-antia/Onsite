@@ -8,11 +8,17 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.security import hash_password, verify_password
 from app.db.database import get_db
+from app.db.models import AuditLog
 from app.db.models import Session as UserSession
 from app.db.models import User
 
 users_router = APIRouter(tags=["users"])
 admin_router = APIRouter(prefix="/admin", tags=["admin-users"])
+
+
+def _audit(db: Session, actor_id: int, action: str, target_user_id: int, details: dict | None = None) -> None:
+    db.add(AuditLog(actor_id=actor_id, action=action, target_user_id=target_user_id, details=details))
+    db.commit()
 
 PREFS_DEFAULTS = {
     "theme": "dark",
@@ -267,8 +273,10 @@ def admin_update_user_role(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
+    old_role = user.role
     user.role = payload.role
     db.commit()
+    _audit(db, current_user.id, "user.role_changed", user_id, {"old_role": old_role, "new_role": payload.role})
     return {"status": "ok", "id": user_id, "role": payload.role}
 
 
@@ -280,6 +288,7 @@ def admin_delete_user(user_id: int, db: Session = Depends(get_db), current_user:
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
+    _audit(db, current_user.id, "user.deleted", user_id, {"email": user.email, "role": user.role})
     db.delete(user)
     db.commit()
     return {"status": "deleted", "id": user_id}
@@ -300,8 +309,9 @@ def admin_set_password(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-    user.hashed_password = hash_password(payload.new_password)
+    user.password_hash = hash_password(payload.new_password)
     db.commit()
+    _audit(db, current_user.id, "user.password_reset", user_id, {})
     return {"status": "ok", "id": user_id}
 
 
@@ -317,4 +327,5 @@ def admin_invalidate_sessions(
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
     deleted = db.query(UserSession).filter(UserSession.user_id == user_id).delete()
     db.commit()
+    _audit(db, current_user.id, "user.sessions_invalidated", user_id, {"sessions_deleted": deleted})
     return {"status": "ok", "id": user_id, "sessions_deleted": deleted}
