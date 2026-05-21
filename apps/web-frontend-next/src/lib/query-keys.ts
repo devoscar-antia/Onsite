@@ -20,6 +20,9 @@ export const queryKeys = {
     heatmap: (videoId: string) =>
       ["videos", videoId, "analytics", "heatmap"] as const,
   },
+  productCount: (videoId: string) =>
+    ["videos", videoId, "product-count"] as const,
+  productCounts: () => ["product-counts"] as const,
   me: () => ["me"] as const,
   preferences: () => ["preferences"] as const,
   sessions: () => ["sessions"] as const,

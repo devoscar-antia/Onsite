@@ -25,6 +25,7 @@ export interface Detection {
   y: number;
   w: number;
   h: number;
+  track_id?: number | null;
 }
 
 export interface ProcessedVideoInfo {
@@ -59,4 +60,17 @@ export interface Job {
   updated_at?: string;
 }
 
-export type ActiveTab = "videos" | "dashboard" | "settings";
+export interface ProductCount {
+  video_id: string;
+  job_id: number;
+  total_count: number;
+  class_breakdown: Record<string, number>;
+  counted_at: string;
+}
+
+export interface ProductCountRecord extends ProductCount {
+  id: number;
+  video_filename: string;
+}
+
+export type ActiveTab = "videos" | "dashboard" | "live" | "settings";

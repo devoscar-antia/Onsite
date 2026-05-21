@@ -25,6 +25,27 @@ NO_STORE_HEADERS = {
     "Expires": "0",
 }
 
+MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB
+
+# Video magic-byte signatures: (offset, bytes)
+_VIDEO_SIGNATURES = [
+    (0,  b"\x00\x00\x00\x18ftyp"),   # MP4 ftyp (18-byte box)
+    (0,  b"\x00\x00\x00\x1cftyp"),   # MP4 ftyp (28-byte box)
+    (0,  b"\x00\x00\x00\x20ftyp"),   # MP4 ftyp (32-byte box)
+    (4,  b"ftyp"),                    # MP4/MOV generic ftyp at offset 4
+    (0,  b"RIFF"),                    # AVI
+    (0,  b"\x1a\x45\xdf\xa3"),       # MKV/WebM (EBML)
+    (0,  b"\x00\x00\x00\x14ftyp"),   # MP4 ftyp (20-byte box)
+]
+
+
+def _is_valid_video(data: bytes) -> bool:
+    for offset, sig in _VIDEO_SIGNATURES:
+        end = offset + len(sig)
+        if len(data) >= end and data[offset:end] == sig:
+            return True
+    return False
+
 
 # ---------------------------------------------------------------------------
 # Admin endpoints
@@ -46,6 +67,11 @@ async def upload_video(
     safe_name = f"{uuid.uuid4().hex}{suffix}"
     target_path = vs.ORIGINAL_VIDEOS_DIR / safe_name
     content = await file.read()
+
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds 2 GB limit")
+    if len(content) < 16 or not _is_valid_video(content):
+        raise HTTPException(status_code=400, detail="File does not appear to be a valid video")
 
     # Save to local disk (used by the processing pipeline)
     target_path.write_bytes(content)
@@ -121,6 +147,22 @@ def process_video(
         raise
 
 
+def _class_breakdown_from_detections(detections: list[dict]) -> dict[str, int]:
+    """Count unique track_ids per class. Falls back to detection count when track_id absent."""
+    by_class: dict[str, set] = {}
+    has_tracks = any(d.get("track_id") is not None and d.get("track_id", -1) >= 0 for d in detections)
+    for d in detections:
+        cls = d.get("class", "unknown")
+        by_class.setdefault(cls, set())
+        if has_tracks:
+            tid = d.get("track_id")
+            if tid is not None and tid >= 0:
+                by_class[cls].add(tid)
+        else:
+            by_class[cls].add(id(d))
+    return {cls: len(ids) for cls, ids in by_class.items()}
+
+
 def _run_with_job_tracking(
     db: Session,
     background_tasks: BackgroundTasks,
@@ -153,6 +195,13 @@ def _run_with_job_tracking(
             processing_time_sec=round(elapsed, 2),
             processed_storage_key=processed_filename,
         )
+        # Persist product count with per-class breakdown from detections cache
+        try:
+            detections = vs.build_detections(video_filename, source_path)
+            class_breakdown = _class_breakdown_from_detections(detections)
+        except Exception:
+            class_breakdown = None
+        vdb.save_product_count(db, job.id, job.video_id, total_count, class_breakdown)
 
     # Upload processed video to Storage in the background; persist processed_storage_url on success
     processed_path = vs.PROCESSED_VIDEOS_DIR / processed_filename
@@ -452,3 +501,46 @@ def get_confidence_timeline(video_id: str, current_user: User = Depends(get_curr
 def get_heatmap_data(video_id: str, current_user: User = Depends(get_current_user)):
     detections = vs.build_detections(video_id, vs.get_video_path(video_id))
     return analytics.compute_heatmap(detections)
+
+
+# ---------------------------------------------------------------------------
+# Product counts
+# ---------------------------------------------------------------------------
+
+@public_router.get("/{video_id}/product-count")
+def get_product_count(video_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    video_record = vdb.get_video_by_storage_key(db, video_id)
+    if not video_record:
+        raise HTTPException(status_code=404, detail="Video no encontrado")
+    record = vdb.get_product_count_by_video(db, video_record.id)
+    if not record:
+        raise HTTPException(status_code=404, detail="No hay conteo disponible para este video")
+    return JSONResponse(content={
+        "video_id": video_id,
+        "job_id": record.job_id,
+        "total_count": record.total_count,
+        "class_breakdown": record.class_breakdown or {},
+        "counted_at": record.counted_at.isoformat() if record.counted_at else None,
+    }, headers=NO_STORE_HEADERS)
+
+
+@public_router.get("/product-counts")
+def list_all_product_counts(
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    records = vdb.list_product_counts(db, limit=limit)
+    result = []
+    for r in records:
+        video = r.video
+        result.append({
+            "id": r.id,
+            "job_id": r.job_id,
+            "video_id": video.storage_key if video else None,
+            "video_filename": video.filename if video else None,
+            "total_count": r.total_count,
+            "class_breakdown": r.class_breakdown or {},
+            "counted_at": r.counted_at.isoformat() if r.counted_at else None,
+        })
+    return JSONResponse(content=result, headers=NO_STORE_HEADERS)

@@ -91,7 +91,7 @@ function KpiCard({
   isDark: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border p-4 ${isDark ? "border-[rgba(255,255,255,0.06)] bg-surface" : "border-slate-200 bg-white"}`}>
+    <div className={`rounded-2xl border p-4 ${isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white"}`}>
       <div className="flex items-start justify-between">
         <p className={`text-xs font-medium ${isDark ? "text-muted" : "text-slate-500"}`}>{label}</p>
         <span className={`rounded-lg p-1.5 ${accent}`}><Icon className="h-3.5 w-3.5" /></span>
@@ -163,13 +163,7 @@ function GlobalDetectionSection({
     return { totalTracked, avgConf, avgThroughput, best };
   }, [perVideo]);
 
-  const cardBase = isDark ? "border-[rgba(255,255,255,0.06)] bg-surface" : "border-slate-200 bg-white";
-  const tooltipStyle = {
-    background: isDark ? "#0D1117" : "#ffffff",
-    border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e2e8f0",
-    borderRadius: 10,
-    fontSize: 12,
-  };
+  const cardBase = isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white";
 
   if (loading) {
     return (
@@ -346,7 +340,7 @@ export function DashboardTab({
   const totalDuration = useMemo(() => videos.reduce((acc, v) => acc + (v.duration ?? 0), 0), [videos]);
   const activityData = useMemo(() => buildActivity(videos), [videos]);
 
-  const cardBase = isDark ? "border-[rgba(255,255,255,0.06)] bg-surface" : "border-slate-200 bg-white";
+  const cardBase = isDark ? "border-border-soft bg-surface" : "border-slate-200 bg-white";
   const tooltipStyle = {
     background: isDark ? "#0D1117" : "#ffffff",
     border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e2e8f0",
@@ -379,7 +373,7 @@ export function DashboardTab({
   }
 
   return (
-    <div className="flex-1 min-h-0 space-y-3 overflow-y-auto pb-4 pr-1">
+    <div className="no-scrollbar flex-1 min-h-0 space-y-3 overflow-y-auto pb-4 pr-1">
 
       {/* ── KPI cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

@@ -56,13 +56,14 @@ def _geolocate(ip: str) -> tuple[str, str]:
     if any(ip.startswith(p) for p in _private) or ip == "::1":
         return "Local", "—"
     try:
-        url = f"http://ip-api.com/json/{ip}?fields=status,city,country"
+        url = f"https://ip-api.com/json/{ip}?fields=status,city,country"
         with urllib.request.urlopen(url, timeout=2) as resp:
             data = json.loads(resp.read())
             if data.get("status") == "success":
                 return data.get("city", "—"), data.get("country", "—")
-    except Exception:
-        pass
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).debug("Geolocate failed for %s: %r", ip, e)
     return "—", "—"
 
 
@@ -70,7 +71,8 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=UserResponse)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, payload: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
